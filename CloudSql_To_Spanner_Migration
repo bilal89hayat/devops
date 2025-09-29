@@ -19,6 +19,7 @@ If you skip the proxy and use a direct MySQL connection, you need to whitelist t
 3. Once spanner is able to access cloud mysql Run Below Command
 --->>> spanner-migration-tool schema-and-data --source=mysql --source-profile="host=<source_db_ip>,port=<port>,user=<username>,dbName=<source_db_name>"
                                        --target-profile="project=<project_id>,instance=<spanner_instance_id>,dbName=<spanner_db>"
+When above command is executed u will be prompted for password for source db, enter it and migration should start.
 
 Above command Will migrate both schema and data from source(mysql) to spanner db.
 
