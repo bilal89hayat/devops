@@ -6,7 +6,7 @@ You have database in cloud mysql and spanner with data populated.
 Steps :
 1. Install spanner-migration-tool, using below command, this command has to be executed in cloud shell.
 -->>> sudo apt-get install google-cloud-sdk-spanner-migration-tool
-This will help to migrate schema and data from source to spanner.
+This tool will help to migrate schema and data from source to spanner.
 
 2. Spanner should be able to access Cloud Sql.
 If you run the tool from Cloud Shell, which is better
