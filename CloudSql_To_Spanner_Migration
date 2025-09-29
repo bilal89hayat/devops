@@ -1,0 +1,25 @@
+This file will walk you through the process of migrating schema and data from CloudMysql To Spanner
+
+PreRequisites :
+You have database in cloud mysql and spanner with data populated.
+
+Steps :
+1. Install spanner-migration-tool, using below command, this command has to be executed in cloud shell.
+-->>> sudo apt-get install google-cloud-sdk-spanner-migration-tool
+This will help to migrate schema and data from source to spanner.
+
+2. Spanner should be able to access Cloud Sql.
+If you run the tool from Cloud Shell, which is better
+Cloud Shell runs in a GCP-managed environment.
+Its IPs rotate, but GCP automatically allows Cloud Shell to connect to Cloud SQL without manual IP whitelisting, if you use the Cloud SQL Auth Proxy.
+If you skip the proxy and use a direct MySQL connection, you need to whitelist the Cloud Shell IP, but it changes often, so it’s unreliable.
+
+
+
+3. Once spanner is able to access cloud mysql Run Below Command
+--->>> spanner-migration-tool schema-and-data --source=mysql --source-profile="host=<source_db_ip>,port=<port>,user=<username>,dbName=<source_db_name>"
+                                       --target-profile="project=<project_id>,instance=<spanner_instance_id>,dbName=<spanner_db>"
+
+Above command Will migrate both schema and data from source(mysql) to spanner db.
+
+
