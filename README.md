@@ -1,1 +1,1 @@
-This Repo Will cover diff usecases that are encountered while working with gcp
+This Repo Will cover diff usecases that people encounter in day to day tech work !
