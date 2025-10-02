@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 # Set the working directory
 WORKDIR /app
 
-COPY --chown=1001:0 build/libs/some_jar_file.jar/app/
+COPY --chown=1001:0 build/libs/some_jar_file.jar /app/
 
 # Create a non-root user for security
 RUN addgroup --system appgroup && adduser --system --ingroup appgroup --uid 1001 appuser
@@ -18,3 +18,63 @@ EXPOSE 8080
 
 #Set the entrypoint
 ENTRYPOINT ["java", "-XX:+TieredCompilation", "-Xshare:auto", "-XX:InitialRAMPercentage=50.0", "-XX:MaxRAMPercentage=75.0","-jar","/app/some_jar_file.jar"]
+
+====EXPLANATION====
+1. FROM openjdk:17-slim
+We are trying to dockerize a Spring boot app here, that already contains a built in jar.
+We need a runtime environment that has java 17.
+
+The slim variant is a version of the official OpenJDK Docker image, it includes only minimal OS-level packages
+and dependencies needed to run Java, and omits many extras (documentation, development tools, UI components, etc.).
+It often uses the "headless" variant of Java by default since desktop UI
+libraries are not generally needed in server / container deployments(i.e. without GUI / AWT / Swing support) .
+It uses Debian (or a similar lightweight base) but with only essential packages and "no-install-recommends" policies during apt installation to reduce footprint.
+
+Everything that follows in the Dockerfile builds on top of this image.
+
+2. RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
+2.a : apt-get update updates the package index so the next install sees the latest package lists.
+2.b : apt-get install -y curl installs curl (the -y auto-confirms the install).
+curl is often needed to:
+Download files or scripts inside the container.
+Make HTTP requests (for debugging, health checks, or app setup).
+Verify connectivity to APIs/services.
+
+2.c : rm -rf /var/lib/apt/lists/* removes the apt cache so the image layer doesn’t keep the package index (reduces image size).
+
+
+3. WORKDIR /app
+Sets the working directory for subsequent COPY, RUN command.
+If at container runtime the directory doesn’t exist Docker will create it.
+Any relative paths in later instructions are relative to /app.
+
+4. COPY --chown=1001:0 build/libs/some_jar_file.jar /app/
+--chown=1001:0 sets the owner UID to 1001 and the group ID to 0 (group 0 is root). That means the file in the image will be owned by UID 1001 and root group.
+Using numeric UID/GID is valid, but using appuser:appgroup is more readable if those accounts exist at that point in the Dockerfile.
+
+5. RUN addgroup --system appgroup && adduser --system --ingroup appgroup --uid 1001 appuser
+Creates a system group appgroup and a system user appuser with UID 1001, and puts the user in appgroup.
+The --system flags typically create a user/group without a login shell and with a system uid/gid range.
+Creating a dedicated non-root user is a security best practice so your app doesn’t run as root inside the container.
+
+
+6. USER 1001
+Switches the effective user for subsequent instructions and for running the container to UID 1001.
+This means the process launched by the ENTRYPOINT will run as the unprivileged user.
+
+7. EXPOSE 8080
+Declares that the container listens on port 8080.
+This is documentation-only for the image (and used by some Docker tools).
+It does not publish or map the port to the host — to access the service from the host you still need to run the container with -p (for example -p 8080:8080).
+
+8. ENTRYPOINT ["java", "-XX:+TieredCompilation", "-Xshare:auto", "-XX:InitialRAMPercentage=50.0", "-XX:MaxRAMPercentage=75.0","-jar","/app/some_jar_file.jar"]
+ENTRYPOINT sets the main process executed when the container starts.
+The exec-array form ([...]) is preferred because it bypasses the shell and preserves signals (important for graceful shutdown).
+
+8.a : -XX:+TieredCompilation — enables tiered JIT compilation (mix of quick profiling-based compilation and full optimization) which improves startup-to-peak tradeoff.
+8.b : -Xshare:auto — enables/uses Class Data Sharing (CDS) if an appropriate archive is available; can speed startup and reduce memory usage.
+8.c : -XX:InitialRAMPercentage=50.0 and -XX:MaxRAMPercentage=75.0 — tell the JVM to size initial and maximum heap as a percentage of the container/machine memory.
+8.d : This is helpful in container environments where you want the JVM to adapt to available memory instead of hardcoding -Xms/-Xmx.
+      The values you provide mean “start with memory allocation roughly equal to 50% of available memory and allow the JVM to grow up to ~75%.” (Behavior depends on JVM version and ergonomics.)
+8.e : -jar /app/some_jar_file.jar — run the JAR you copied into /app/. Make sure the path you used in COPY matches this path and that the file is readable by the USER you switch to.
