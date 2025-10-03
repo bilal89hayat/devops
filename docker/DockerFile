@@ -58,10 +58,12 @@ Creates a system group appgroup and a system user appuser with UID 1001, and put
 The --system flags typically create a user/group without a login shell and with a system uid/gid range.
 Creating a dedicated non-root user is a security best practice so your app doesn’t run as root inside the container.
 
-
 6. USER 1001
 Switches the effective user for subsequent instructions and for running the container to UID 1001.
 This means the process launched by the ENTRYPOINT will run as the unprivileged user.
+
+
+NOTE : Line no 5 and 6 is not required while running in local machine !
 
 7. EXPOSE 8080
 Declares that the container listens on port 8080.
