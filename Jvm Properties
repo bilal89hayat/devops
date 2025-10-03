@@ -1,0 +1,3 @@
+1. -Xms
+2. -Xmx
+3. -XXMaxRamPercentage
